@@ -1257,40 +1257,11 @@
     box-shadow: 0 20px 50px rgba(0,0,0,0.5);
   }
 
-  /* Admin Dashboard v2 */
+  /* Admin Dashboard */
   #admin-dashboard {
     position: fixed; inset: 20px; background: var(--bg); border: 1px solid var(--accent);
-    border-radius: 20px; z-index: 9999; display: none;
-    box-shadow: 0 0 100px rgba(0,212,255,0.2); overflow: hidden;
-    flex-direction: column;
-  }
-  .admin-layout { display: flex; flex: 1; overflow: hidden; }
-  .admin-sidebar { 
-    width: 280px; border-right: 1px solid var(--border); background: rgba(0,0,0,0.2);
-    display: flex; flex-direction: column;
-  }
-  .admin-content { flex: 1; padding: 30px; overflow-y: auto; background: var(--bg); }
-  
-  .student-item {
-    padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.05);
-    cursor: pointer; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center;
-  }
-  .student-item:hover { background: rgba(0,212,255,0.05); }
-  .student-item.active { background: rgba(0,212,255,0.1); border-left: 4px solid var(--accent); }
-  
-  .progress-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 8px; margin-top: 15px;
-  }
-  .progress-box {
-    aspect-ratio: 1; border-radius: 6px; border: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: center; font-size: 0.75rem;
-    font-weight: 700; color: var(--muted); background: var(--surface);
-  }
-  .progress-box.done { background: var(--accent3); color: #000; border-color: transparent; }
-  
-  .admin-header {
-    padding: 20px 30px; border-bottom: 1px solid var(--border);
-    display: flex; justify-content: space-between; align-items: center; background: var(--surface);
+    border-radius: 20px; z-index: 9999; padding: 30px; display: none;
+    overflow-y: auto; box-shadow: 0 0 100px rgba(0,212,255,0.2);
   }
 
   /* Custom Scrollbar */
@@ -1312,112 +1283,29 @@
     <div style="font-size:3rem; margin-bottom:20px;">🎓</div>
     <h2 style="color:#fff; margin-bottom:10px;">Добро пожаловать</h2>
     <p style="color:var(--muted); font-size:0.9rem; margin-bottom:25px;">Введите ваше имя для начала урока и сохранения прогресса</p>
-    <input type="text" id="student-name-input" class="trainer-input" placeholder="Ваше Имя и Фамилия" style="margin-bottom:15px; text-align:center;" onkeydown="if(event.key==='Enter') loginStudent()">
+    <input type="text" id="student-name-input" class="trainer-input" placeholder="Ваше Имя и Фамилия" style="margin-bottom:15px; text-align:center;">
     <button onclick="loginStudent()" class="trainer-btn" style="width:100%; background:var(--accent); color:#000; border:none; padding:12px;">Начать обучение</button>
-    <div id="emergency-skip" style="margin-top:20px; display:none;">
-      <a href="javascript:void(0)" onclick="forceHideAuth()" style="color:var(--muted); font-size:0.75rem; text-decoration:underline;">Пропустить (если кнопка не работает)</a>
-    </div>
   </div>
 </div>
 
-<script>
-  // EMERGENCY AUTH SCRIPT (Independent of main engine)
-  const SUPABASE_URL = "REPLACE_ME_SUPABASE_URL";
-  const SUPABASE_KEY = "REPLACE_ME_SUPABASE_KEY";
-  let supabaseClient = null;
-  let currentStudent = null;
-
-  function forceHideAuth() {
-    const overlay = document.getElementById('auth-overlay');
-    if(overlay) overlay.style.display = 'none';
-  }
-
-  // Show skip button after 5 seconds just in case
-  setTimeout(() => {
-    const skip = document.getElementById('emergency-skip');
-    if(skip) skip.style.display = 'block';
-  }, 5000);
-
-  function loginStudent() {
-    console.log("Login clicked");
-    const input = document.getElementById('student-name-input');
-    const name = input ? input.value.trim() : "";
-    if(!name) { alert('Пожалуйста, введите имя'); return; }
-    
-    currentStudent = name;
-    try { localStorage.setItem('student_name', name); } catch(e){}
-    
-    forceHideAuth();
-    if(typeof showToast === 'function') showToast(`Привет, ${name}!`);
-  }
-
-  // Check saved on load
-  (function() {
-    try {
-      const saved = localStorage.getItem('student_name');
-      if(saved) {
-        currentStudent = saved;
-        // Run after DOM is ready
-        window.addEventListener('load', forceHideAuth);
-      }
-    } catch(e){}
-  })();
-
-  // Init Supabase after load
-  window.addEventListener('load', () => {
-    try {
-      const sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
-      if (sb && typeof sb.createClient === 'function') {
-        supabaseClient = sb.createClient(SUPABASE_URL, SUPABASE_KEY);
-        console.log("Supabase connected");
-      }
-    } catch(e) { console.error("Supabase fail:", e); }
-
-    // Admin Check
-    const params = new URLSearchParams(window.location.search);
-    if(params.has('admin')) {
-      const btn = document.createElement('button');
-      btn.innerHTML = '📊 Admin';
-      btn.className = 'trainer-btn';
-      btn.style.position = 'fixed'; btn.style.bottom = '20px'; btn.style.left = '20px'; btn.style.zIndex = '9998';
-      btn.onclick = () => { if(typeof loadAdminData === 'function') loadAdminData(); };
-      document.body.appendChild(btn);
-    }
-  });
-</script>
-
 <!-- ====== ADMIN DASHBOARD ====== -->
 <div id="admin-dashboard">
-  <div class="admin-header">
-    <div style="display:flex; align-items:center; gap:15px;">
-      <span style="font-size:1.5rem;">📊</span>
-      <h2 style="color:var(--accent); margin:0;">Панель администратора</h2>
-    </div>
-    <div style="display:flex; gap:10px;">
-      <button onclick="loadAdminData()" class="trainer-btn" style="border-color:var(--accent3); color:var(--accent3);">🔄 Обновить</button>
-      <button onclick="document.getElementById('admin-dashboard').style.display='none'" class="trainer-btn">Закрыть</button>
-    </div>
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+    <h2 style="color:var(--accent);">📊 Панель администратора — Прогресс учеников</h2>
+    <button onclick="document.getElementById('admin-dashboard').style.display='none'" class="trainer-btn">Закрыть</button>
   </div>
-  
-  <div class="admin-layout">
-    <div class="admin-sidebar">
-      <div style="padding:15px; border-bottom:1px solid var(--border);">
-        <input type="text" id="admin-search" class="trainer-input" placeholder="Поиск ученика..." style="font-size:0.85rem;" oninput="filterAdminStudents()">
-      </div>
-      <div id="admin-student-list" style="overflow-y:auto; flex:1;">
-        <!-- List of unique students -->
-      </div>
-      <div id="admin-summary" style="padding:15px; background:rgba(0,212,255,0.03); font-size:0.8rem; color:var(--muted); border-top:1px solid var(--border);">
-        <!-- Total stats -->
-      </div>
-    </div>
-    
-    <div class="admin-content" id="admin-detail-view">
-      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--muted);">
-        <span style="font-size:3rem; margin-bottom:20px;">👤</span>
-        <p>Выберите ученика из списка слева, чтобы увидеть детализацию прогресса</p>
-      </div>
-    </div>
+  <div id="admin-stats" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:20px; margin-bottom:30px;">
+    <!-- Stats widgets -->
+  </div>
+  <div style="background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden;">
+    <table style="margin:0;">
+      <thead>
+        <tr><th>Ученик</th><th>Задание</th><th>Тип</th><th>Дата</th><th>Статус</th></tr>
+      </thead>
+      <tbody id="admin-table-body">
+        <tr><td colspan="5" style="text-align:center; padding:40px; color:var(--muted);">Загрузка данных...</td></tr>
+      </tbody>
+    </table>
   </div>
 </div>
 
@@ -2983,6 +2871,60 @@
     card.classList.toggle('open');
   }
 
+  // ============================================================
+  // SUPABASE & PROGRESS LOGIC
+  // ============================================================
+  const SUPABASE_URL = "REPLACE_ME_SUPABASE_URL";
+  const SUPABASE_KEY = "REPLACE_ME_SUPABASE_KEY";
+  let supabaseClient = null;
+  let currentStudent = null;
+
+  // Initialize on load
+  document.addEventListener('DOMContentLoaded', () => {
+    // 1. Setup Supabase
+    try {
+      const sbGlobal = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
+      if (sbGlobal && typeof sbGlobal.createClient === 'function') {
+        supabaseClient = sbGlobal.createClient(SUPABASE_URL, SUPABASE_KEY);
+      }
+    } catch(e) { console.error("Supabase init failed:", e); }
+
+    // 2. Check for saved student
+    try {
+      currentStudent = localStorage.getItem('student_name');
+      if(currentStudent) {
+        const overlay = document.getElementById('auth-overlay');
+        if(overlay) overlay.style.display = 'none';
+      }
+    } catch(e) { console.warn("LocalStorage access denied:", e); }
+
+    // 3. Admin Check
+    const params = new URLSearchParams(window.location.search);
+    if(params.has('admin')) {
+      const btn = document.createElement('button');
+      btn.innerHTML = '📊 Admin';
+      btn.className = 'trainer-btn';
+      btn.style.position = 'fixed'; btn.style.bottom = '20px'; btn.style.left = '20px'; btn.style.zIndex = '9998';
+      btn.onclick = loadAdminData;
+      document.body.appendChild(btn);
+    }
+  });
+
+  async function loginStudent() {
+    const input = document.getElementById('student-name-input');
+    const name = input ? input.value.trim() : "";
+    if(!name) { alert('Пожалуйста, введите имя'); return; }
+    
+    currentStudent = name;
+    try {
+      localStorage.setItem('student_name', name);
+    } catch(e) {}
+    
+    const overlay = document.getElementById('auth-overlay');
+    if(overlay) overlay.style.display = 'none';
+    showToast(`Привет, ${name}! Прогресс будет сохраняться.`);
+  }
+
   async function saveProgress(taskId, category, status) {
     if(!supabaseClient || !currentStudent) return;
     try {
@@ -2992,130 +2934,26 @@
     } catch(e) { console.error("Error saving progress:", e); }
   }
 
-  let allRecords = [];
-
   async function loadAdminData() {
-    if(!supabaseClient) { alert('Supabase не подключен'); return; }
-    document.getElementById('admin-dashboard').style.display = 'flex';
+    if(!supabaseClient) { alert('Supabase не подключен (проверьте интернет или блокировщики)'); return; }
+    const dashboard = document.getElementById('admin-dashboard');
+    if(dashboard) dashboard.style.display = 'block';
     
     const { data, error } = await supabaseClient.from('lesson_progress').select('*').order('created_at', { ascending: false });
-    if(error) { alert('Ошибка загрузки данных'); return; }
+    if(error) { alert('Ошибка загрузки данных из БД'); return; }
     
-    allRecords = data;
-    renderStudentList();
-  }
-
-  function renderStudentList() {
-    const listEl = document.getElementById('admin-student-list');
-    const summaryEl = document.getElementById('admin-summary');
-    
-    // Group records by student
-    const studentGroups = {};
-    allRecords.forEach(r => {
-      if(!studentGroups[r.student_name]) studentGroups[r.student_name] = [];
-      studentGroups[r.student_name].push(r);
-    });
-    
-    const names = Object.keys(studentGroups).sort();
-    
-    listEl.innerHTML = names.map(name => `
-      <div class="student-item" onclick="showStudentDetail('${name}', this)">
-        <span>${name}</span>
-        <span class="badge badge-lan" style="font-size:0.65rem;">${studentGroups[name].length}</span>
-      </div>
-    `).join('') || '<div style="padding:40px; text-align:center; color:var(--muted);">Нет данных</div>';
-    
-    summaryEl.innerHTML = `
-      <div>Всего учеников: <strong>${names.length}</strong></div>
-      <div>Всего записей: <strong>${allRecords.length}</strong></div>
-    `;
-  }
-
-  function filterAdminStudents() {
-    const query = document.getElementById('admin-search').value.toLowerCase();
-    const items = document.querySelectorAll('.student-item');
-    items.forEach(item => {
-      const name = item.querySelector('span').textContent.toLowerCase();
-      item.style.display = name.includes(query) ? 'flex' : 'none';
-    });
-  }
-
-  function showStudentDetail(name, el) {
-    // UI selection
-    document.querySelectorAll('.student-item').forEach(i => i.classList.remove('active'));
-    if(el) el.classList.add('active');
-    
-    const studentRecords = allRecords.filter(r => r.student_name === name);
-    const view = document.getElementById('admin-detail-view');
-    
-    const getTaskStatus = (id) => studentRecords.some(r => r.task_id === id);
-
-    view.innerHTML = `
-      <div style="border-bottom:1px solid var(--border); padding-bottom:20px; margin-bottom:25px;">
-        <h2 style="color:#fff; margin:0;">${name}</h2>
-        <p style="color:var(--muted); font-size:0.9rem; margin-top:5px;">Общий прогресс: ${studentRecords.length} выполненных упражнений</p>
-      </div>
-
-      <div style="margin-bottom:40px;">
-        <h3 style="color:var(--accent); font-size:1rem; margin-bottom:15px;">🚀 Симулятор (Задания 1-10)</h3>
-        <div class="progress-grid">
-          ${Array.from({length:10}, (_, i) => {
-            const taskId = `Simulator_Task_${i+1}`;
-            const isDone = getTaskStatus(taskId);
-            return `<div class="progress-box ${isDone ? 'done' : ''}" title="${taskId}">${i+1}</div>`;
-          }).join('')}
-        </div>
-      </div>
-
-      <div style="margin-bottom:40px;">
-        <h3 style="color:var(--accent3); font-size:1rem; margin-bottom:15px;">📊 Тренажер: Скорость (0-9)</h3>
-        <div class="progress-grid">
-          ${Array.from({length:10}, (_, i) => {
-            const taskId = `Task_0_${i}`;
-            const isDone = getTaskStatus(taskId);
-            return `<div class="progress-box ${isDone ? 'done' : ''}" title="${taskId}">${i}</div>`;
-          }).join('')}
-        </div>
-      </div>
-
-      <div style="margin-bottom:40px;">
-        <h3 style="color:var(--accent2); font-size:1rem; margin-bottom:15px;">📟 Тренажер: Ping & Jitter (0-9)</h3>
-        <div class="progress-grid">
-          ${Array.from({length:10}, (_, i) => {
-            const taskId = `Task_1_${i}`;
-            const isDone = getTaskStatus(taskId);
-            return `<div class="progress-box ${isDone ? 'done' : ''}" title="${taskId}">${i}</div>`;
-          }).join('')}
-        </div>
-      </div>
-
-      <div style="margin-bottom:40px;">
-        <h3 style="color:var(--accent4); font-size:1rem; margin-bottom:15px;">📐 Тренажер: Параметры (0-9)</h3>
-        <div class="progress-grid">
-          ${Array.from({length:10}, (_, i) => {
-            const taskId = `Task_2_${i}`;
-            const isDone = getTaskStatus(taskId);
-            return `<div class="progress-box ${isDone ? 'done' : ''}" title="${taskId}">${i}</div>`;
-          }).join('')}
-        </div>
-      </div>
-      
-      <div style="margin-top:50px; background:var(--surface); border-radius:12px; padding:20px; border:1px solid var(--border);">
-        <h3 style="font-size:0.9rem; margin-bottom:15px;">История логов</h3>
-        <table style="font-size:0.75rem;">
-          <thead><tr><th>ID Задания</th><th>Тип</th><th>Время</th></tr></thead>
-          <tbody>
-            ${studentRecords.map(r => `
-              <tr>
-                <td>${r.task_id}</td>
-                <td>${r.category}</td>
-                <td>${new Date(r.created_at).toLocaleString()}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    `;
+    const tbody = document.getElementById('admin-table-body');
+    if(tbody) {
+      tbody.innerHTML = data.map(row => `
+        <tr>
+          <td><strong>${row.student_name}</strong></td>
+          <td>${row.task_id}</td>
+          <td><span class="badge badge-lan">${row.category}</span></td>
+          <td style="font-size:0.7rem;">${new Date(row.created_at).toLocaleString()}</td>
+          <td><span style="color:#10b981;">✓ Выполнено</span></td>
+        </tr>
+      `).join('') || '<tr><td colspan="5" style="text-align:center;">Нет данных</td></tr>';
+    }
   }
 
   function showToast(msg) {
