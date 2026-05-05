@@ -1314,8 +1314,77 @@
     <p style="color:var(--muted); font-size:0.9rem; margin-bottom:25px;">Введите ваше имя для начала урока и сохранения прогресса</p>
     <input type="text" id="student-name-input" class="trainer-input" placeholder="Ваше Имя и Фамилия" style="margin-bottom:15px; text-align:center;" onkeydown="if(event.key==='Enter') loginStudent()">
     <button onclick="loginStudent()" class="trainer-btn" style="width:100%; background:var(--accent); color:#000; border:none; padding:12px;">Начать обучение</button>
+    <div id="emergency-skip" style="margin-top:20px; display:none;">
+      <a href="javascript:void(0)" onclick="forceHideAuth()" style="color:var(--muted); font-size:0.75rem; text-decoration:underline;">Пропустить (если кнопка не работает)</a>
+    </div>
   </div>
 </div>
+
+<script>
+  // EMERGENCY AUTH SCRIPT (Independent of main engine)
+  const SUPABASE_URL = "REPLACE_ME_SUPABASE_URL";
+  const SUPABASE_KEY = "REPLACE_ME_SUPABASE_KEY";
+  let supabaseClient = null;
+  let currentStudent = null;
+
+  function forceHideAuth() {
+    const overlay = document.getElementById('auth-overlay');
+    if(overlay) overlay.style.display = 'none';
+  }
+
+  // Show skip button after 5 seconds just in case
+  setTimeout(() => {
+    const skip = document.getElementById('emergency-skip');
+    if(skip) skip.style.display = 'block';
+  }, 5000);
+
+  function loginStudent() {
+    console.log("Login clicked");
+    const input = document.getElementById('student-name-input');
+    const name = input ? input.value.trim() : "";
+    if(!name) { alert('Пожалуйста, введите имя'); return; }
+    
+    currentStudent = name;
+    try { localStorage.setItem('student_name', name); } catch(e){}
+    
+    forceHideAuth();
+    if(typeof showToast === 'function') showToast(`Привет, ${name}!`);
+  }
+
+  // Check saved on load
+  (function() {
+    try {
+      const saved = localStorage.getItem('student_name');
+      if(saved) {
+        currentStudent = saved;
+        // Run after DOM is ready
+        window.addEventListener('load', forceHideAuth);
+      }
+    } catch(e){}
+  })();
+
+  // Init Supabase after load
+  window.addEventListener('load', () => {
+    try {
+      const sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
+      if (sb && typeof sb.createClient === 'function') {
+        supabaseClient = sb.createClient(SUPABASE_URL, SUPABASE_KEY);
+        console.log("Supabase connected");
+      }
+    } catch(e) { console.error("Supabase fail:", e); }
+
+    // Admin Check
+    const params = new URLSearchParams(window.location.search);
+    if(params.has('admin')) {
+      const btn = document.createElement('button');
+      btn.innerHTML = '📊 Admin';
+      btn.className = 'trainer-btn';
+      btn.style.position = 'fixed'; btn.style.bottom = '20px'; btn.style.left = '20px'; btn.style.zIndex = '9998';
+      btn.onclick = () => { if(typeof loadAdminData === 'function') loadAdminData(); };
+      document.body.appendChild(btn);
+    }
+  });
+</script>
 
 <!-- ====== ADMIN DASHBOARD ====== -->
 <div id="admin-dashboard">
@@ -2912,73 +2981,6 @@
   function toggleTask(header) {
     const card = header.parentElement;
     card.classList.toggle('open');
-  }
-
-  // ============================================================
-  // SUPABASE & PROGRESS LOGIC (Environment Variables)
-  // ============================================================
-  const SUPABASE_URL = "REPLACE_ME_SUPABASE_URL";
-  const SUPABASE_KEY = "REPLACE_ME_SUPABASE_KEY";
-  let supabaseClient = null;
-  let currentStudent = null;
-
-  // Initialize on load
-  document.addEventListener('DOMContentLoaded', () => {
-    // 1. Setup Supabase
-    try {
-      const sbGlobal = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
-      if (sbGlobal && typeof sbGlobal.createClient === 'function') {
-        supabaseClient = sbGlobal.createClient(SUPABASE_URL, SUPABASE_KEY);
-      }
-    } catch(e) { console.error("Supabase init failed:", e); }
-
-    // 2. Check for saved student
-    try {
-      currentStudent = localStorage.getItem('student_name');
-      if(currentStudent) {
-        const overlay = document.getElementById('auth-overlay');
-        if(overlay) overlay.style.display = 'none';
-      }
-    } catch(e) { console.warn("LocalStorage access denied:", e); }
-
-    // 3. Admin Check
-    const params = new URLSearchParams(window.location.search);
-    if(params.has('admin')) {
-      const btn = document.createElement('button');
-      btn.innerHTML = '📊 Admin';
-      btn.className = 'trainer-btn';
-      btn.style.position = 'fixed'; btn.style.bottom = '20px'; btn.style.left = '20px'; btn.style.zIndex = '9998';
-      btn.onclick = loadAdminData;
-      document.body.appendChild(btn);
-    }
-  });
-
-  async function loginStudent() {
-    console.log("Login attempt...");
-    const input = document.getElementById('student-name-input');
-    const name = input ? input.value.trim() : "";
-    
-    if(!name) { 
-      alert('Пожалуйста, введите имя'); 
-      return; 
-    }
-    
-    console.log("Student Name:", name);
-    currentStudent = name;
-    
-    try {
-      localStorage.setItem('student_name', name);
-    } catch(e) { console.warn("Could not save to localStorage", e); }
-    
-    const overlay = document.getElementById('auth-overlay');
-    if(overlay) {
-      overlay.style.display = 'none';
-      console.log("Overlay hidden.");
-    } else {
-      console.error("Auth overlay element not found!");
-    }
-    
-    showToast(`Привет, ${name}! Прогресс будет сохраняться.`);
   }
 
   async function saveProgress(taskId, category, status) {
