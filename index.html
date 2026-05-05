@@ -1312,7 +1312,7 @@
     <div style="font-size:3rem; margin-bottom:20px;">🎓</div>
     <h2 style="color:#fff; margin-bottom:10px;">Добро пожаловать</h2>
     <p style="color:var(--muted); font-size:0.9rem; margin-bottom:25px;">Введите ваше имя для начала урока и сохранения прогресса</p>
-    <input type="text" id="student-name-input" class="trainer-input" placeholder="Ваше Имя и Фамилия" style="margin-bottom:15px; text-align:center;">
+    <input type="text" id="student-name-input" class="trainer-input" placeholder="Ваше Имя и Фамилия" style="margin-bottom:15px; text-align:center;" onkeydown="if(event.key==='Enter') loginStudent()">
     <button onclick="loginStudent()" class="trainer-btn" style="width:100%; background:var(--accent); color:#000; border:none; padding:12px;">Начать обучение</button>
   </div>
 </div>
@@ -2954,17 +2954,30 @@
   });
 
   async function loginStudent() {
+    console.log("Login attempt...");
     const input = document.getElementById('student-name-input');
     const name = input ? input.value.trim() : "";
-    if(!name) { alert('Пожалуйста, введите имя'); return; }
     
+    if(!name) { 
+      alert('Пожалуйста, введите имя'); 
+      return; 
+    }
+    
+    console.log("Student Name:", name);
     currentStudent = name;
+    
     try {
       localStorage.setItem('student_name', name);
-    } catch(e) {}
+    } catch(e) { console.warn("Could not save to localStorage", e); }
     
     const overlay = document.getElementById('auth-overlay');
-    if(overlay) overlay.style.display = 'none';
+    if(overlay) {
+      overlay.style.display = 'none';
+      console.log("Overlay hidden.");
+    } else {
+      console.error("Auth overlay element not found!");
+    }
+    
     showToast(`Привет, ${name}! Прогресс будет сохраняться.`);
   }
 
